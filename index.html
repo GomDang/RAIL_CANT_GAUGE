@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0b0e11">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="screen-orientation" content="portrait">
+<title>Rail Cant Gauge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  /* ===== 웹폰트: 페이퍼로지 (SIL OFL) ===== */
+  @font-face{font-family:'Paperozi';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-4Regular.woff2') format('woff2');font-weight:400;font-display:swap;}
+  @font-face{font-family:'Paperozi';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-5Medium.woff2') format('woff2');font-weight:500;font-display:swap;}
+  @font-face{font-family:'Paperozi';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-6SemiBold.woff2') format('woff2');font-weight:600;font-display:swap;}
+  @font-face{font-family:'Paperozi';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-7Bold.woff2') format('woff2');font-weight:700;font-display:swap;}
+  @font-face{font-family:'Paperozi';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-8ExtraBold.woff2') format('woff2');font-weight:800;font-display:swap;}
+
+  /* ===== 디자인 토큰 (첨부 Design MD 기준) ===== */
+  :root{
+    --canvas:#0b0e11;        /* canvas-dark */
+    --card:#1e2329;          /* surface-card-dark */
+    --elev:#2b3139;          /* surface-elevated-dark */
+    --line:#2b3139;          /* hairline-on-dark */
+    --body:#eaecef;          /* body */
+    --white:#ffffff;         /* on-dark */
+    --muted:#707a8a;         /* muted */
+    --muted2:#929aa5;        /* muted-strong */
+    --primary:#fcd535;       /* primary */
+    --primary-active:#f0b90b;/* primary-active */
+    --primary-dis:#3a3a1f;   /* primary-disabled */
+    --on-primary:#181a20;    /* on-primary */
+    --stable:#2dbdb6;        /* accent-turquoise : 캔트 안정 */
+    --down:#f6465d;          /* 삭제·위험 */
+    --info:#3b82f6;          /* focus ring */
+    --r-sm:4px; --r-md:6px; --r-lg:8px; --r-xl:12px;
+    --font:'Paperozi',-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;
+    --num:'IBM Plex Sans','Paperozi',-apple-system,BlinkMacSystemFont,sans-serif;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; height:100%; background:var(--canvas); color:var(--body);
+    font-family:var(--font); font-size:16px; font-weight:400; overscroll-behavior:none; -webkit-user-select:none; user-select:none;}
+  body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);}
+  :focus-visible{outline:none; box-shadow:0 0 0 2px rgba(59,130,246,.5);}
+  .screen{display:none; min-height:100vh; min-height:100dvh; flex-direction:column; padding:16px;}
+  .screen.active{display:flex;}
+  header{display:flex; align-items:center; gap:12px; min-height:56px; margin-bottom:12px; border-bottom:1px solid var(--line); padding-bottom:8px;}
+  header h1{font-size:20px; margin:0; font-weight:600; color:var(--white); line-height:1.35;}
+  .back{background:var(--card); border:none; color:var(--white); font-family:var(--font); font-size:16px; font-weight:600;
+    min-height:44px; padding:0 14px; border-radius:var(--r-md);}
+  .back:active{background:var(--elev);}
+  h2{font-size:24px; font-weight:600; line-height:1.3; margin:8px 0 12px; color:var(--white);}
+  p,li{font-size:16px; line-height:1.5; color:var(--body);}
+  b{font-weight:600; color:var(--white);}
+  .sub{color:var(--muted2); font-size:14px;}
+
+  /* 버튼: primary = 노랑+검정글씨, secondary = 카드색 */
+  .btn{display:block; width:100%; min-height:56px; border:none; border-radius:var(--r-md);
+    font-family:var(--font); font-size:18px; font-weight:600; line-height:1;
+    background:var(--card); color:var(--white); margin:10px 0; padding:0 24px;}
+  .btn:active{background:var(--elev);}
+  .btn.primary,.btn.warn{background:var(--primary); color:var(--on-primary);}
+  .btn.primary:active,.btn.warn:active{background:var(--primary-active);}
+  .btn.blue{background:var(--card); color:var(--white); border:1px solid var(--line);}
+  .btn:disabled,.btn.primary:disabled{background:var(--primary-dis); color:var(--muted);}
+  .btn:not(.primary):not(.warn):disabled{background:var(--card); color:var(--muted);}
+  .row2{display:flex; gap:10px;} .row2 .btn{flex:1;}
+  .card{background:var(--card); border-radius:var(--r-xl); padding:16px; margin:10px 0;}
+  ol{padding-left:22px; margin:6px 0;}
+  .spacer{flex:1;}
+  svg{display:block; width:100%; height:auto;}
+  .figcap{font-size:14px; color:var(--muted2); text-align:center; margin:6px 0 14px;}
+
+  /* 메뉴 */
+  .menu .btn{min-height:76px; font-size:20px; text-align:left; display:flex; align-items:center; gap:14px; border-radius:var(--r-xl);}
+  .menu .btn .ic{font-size:26px; width:34px; text-align:center;}
+  .menu .btn small{display:block; font-size:14px; font-weight:400; color:var(--muted2); margin-top:6px; line-height:1.4;}
+
+  /* 측정 */
+  .status{display:flex; justify-content:space-between; font-size:14px; color:var(--muted2); gap:8px;}
+  .banner{background:var(--elev); color:var(--white); font-weight:600; font-size:16px; line-height:1.4;
+    border-radius:var(--r-lg); border-left:4px solid var(--primary-active); padding:10px 12px; margin:6px 0;}
+  .banner.danger{border-left-color:var(--down);}
+  .readout{text-align:center; margin:22px 0 4px; font-family:var(--num); font-variant-numeric:tabular-nums; font-feature-settings:"tnum";
+    font-weight:700; letter-spacing:-0.3px; line-height:1.1; color:var(--white); transition:color .15s; white-space:nowrap;}
+  .readout .int{font-size:min(26vw,150px);}
+  .readout .dec{font-size:min(19.5vw,112.5px);} /* 정수부의 75% */
+  .readout.stable{color:var(--stable);}
+  .unit{text-align:center; color:var(--muted2); font-size:16px;}
+  .dirmsg{text-align:center; font-size:18px; font-weight:500; color:var(--body); min-height:28px; margin:8px 0 14px;}
+  .savebtn{min-height:64px; font-size:22px;}
+  .records{list-style:none; margin:8px 0 0; padding:0; height:calc(52px * 5); overflow-y:auto;
+    background:var(--card); border-radius:var(--r-xl);}
+  .records li{position:relative; height:52px; overflow:hidden; border-bottom:1px solid var(--line); touch-action:pan-y;}
+  .records li:last-child{border-bottom:none;}
+  .records li.swiping .del{opacity:1;}
+  .records .del{opacity:0; position:absolute; inset:0; background:var(--down); color:var(--white); display:flex; align-items:center; justify-content:flex-end; padding-right:18px; font-size:16px; font-weight:600;}
+  .records .item{position:absolute; inset:0; background:var(--card); display:flex; align-items:center; justify-content:space-between; padding:0 16px;
+    font-family:var(--num); font-size:20px; font-weight:500; color:var(--white); font-variant-numeric:tabular-nums; transition:transform .2s;}
+  .records .item .tm{color:var(--muted2); font-size:18px;}
+  .records .empty{color:var(--muted); font-size:14px; text-align:center; padding:16px; border:none; height:auto;}
+  .hint{font-size:14px; color:var(--muted); text-align:right; margin-top:6px;}
+  .nosensor{position:fixed; inset:0; background:rgba(11,14,17,.94); display:none; align-items:center; justify-content:center; text-align:center; padding:24px; z-index:50; font-size:20px; font-weight:600; color:var(--white);}
+
+  /* 캘리브레이션 */
+  .steps{display:flex; gap:6px; margin-bottom:8px;}
+  .steps div{flex:1; height:6px; border-radius:3px; background:var(--elev);}
+  .steps div.on{background:var(--primary);}
+  .live{font-family:var(--num); font-size:32px; text-align:center; font-variant-numeric:tabular-nums; margin:10px 0; font-weight:700; color:var(--white);}
+  .live.stable{color:var(--stable);}
+  .msg{font-size:16px; text-align:center; min-height:24px; color:var(--primary-active);}
+  .ok{color:var(--stable); font-weight:600;} .ng{color:var(--down); font-weight:600;}
+  table.res{width:100%; border-collapse:collapse; font-size:16px;}
+  table.res td{padding:8px 4px; border-bottom:1px solid var(--line);}
+  table.res tr:last-child td{border-bottom:none;}
+  table.res td:last-child{text-align:right; font-family:var(--num); font-variant-numeric:tabular-nums; font-weight:500; color:var(--white);}
+
+  /* 민감도 */
+  .opt{display:flex; align-items:center; gap:14px; background:var(--card); border:1px solid var(--line); border-radius:var(--r-xl); padding:14px 16px; margin:10px 0;}
+  .opt.sel{border-color:var(--primary);}
+  .opt input{width:24px; height:24px; accent-color:var(--primary);}
+  .opt b{font-size:20px;} .opt span{display:block; font-size:14px; color:var(--muted2); line-height:1.5;}
+
+  /* 가로 방향 덮개 */
+  #landscape{display:none; position:fixed; inset:0; background:var(--canvas); z-index:100; align-items:center; justify-content:center; text-align:center; font-size:22px; font-weight:600; padding:24px; color:var(--white);}
+  @media (orientation:landscape) and (max-height:600px){ #landscape{display:flex;} }
+  .check{display:flex; align-items:center; gap:10px; font-size:16px; margin:8px 0; min-height:44px;}
+  .check input{width:24px; height:24px; accent-color:var(--primary);}
+</style>
+</head>
+<body>
+
+<div id="landscape">📱 화면을 세로로 돌려주세요.<br><span class="sub" style="font-size:16px">스마트폰 설정에서 화면 회전 잠금을 켜두면 편리합니다.</span></div>
+<div class="nosensor" id="nosensor"></div>
+
+<!-- 1. 기종 선택 -->
+<section class="screen" id="scr-device">
+  <header><h1>Rail Cant Gauge</h1></header>
+  <h2>사용하는 스마트폰을 선택하세요</h2>
+  <p class="sub">기종에 따라 센서 권한 요청 방법과 초기 부호 설정이 다릅니다. 나중에 도움말에서 바꿀 수 있습니다.</p>
+  <div class="spacer"></div>
+  <button class="btn blue" style="min-height:80px;font-size:22px" onclick="selectDevice('android')">🤖 안드로이드폰</button>
+  <button class="btn blue" style="min-height:80px;font-size:22px" onclick="selectDevice('ios')"> 아이폰</button>
+  <div class="spacer"></div>
+</section>
+
+<!-- 2. 거치 안내 -->
+<section class="screen" id="scr-guide">
+  <header><button class="back" id="guideBack" onclick="go('help')" style="display:none">◀ 도움말</button><h1>스마트폰 거치 방법</h1></header>
+  <div class="card" id="guideSvg"></div>
+  <ol>
+    <li>화면이 <b>하늘을 향하게</b> 놓으세요.</li>
+    <li>스마트폰의 긴 방향을 <b>수평계와 나란히</b> 맞추세요.</li>
+    <li>충전포트(<b>USB-C</b>)가 <b>수평계 끝 쪽</b>을 향하게 하세요.</li>
+    <li>스마트폰이 놓인 쪽 레일이 높으면 <b>+</b>, 낮으면 <b>−</b> 로 표시됩니다.</li>
+  </ol>
+  <label class="check" id="guideCheckWrap"><input type="checkbox" id="guideCheck"> 다음부터 보지 않기</label>
+  <div class="spacer"></div>
+  <button class="btn primary" id="guideNext" onclick="guideDone()">확인</button>
+</section>
+
+<!-- 3. 센서 시작 -->
+<section class="screen" id="scr-start">
+  <header><h1>Rail Cant Gauge</h1></header>
+  <div class="spacer"></div>
+  <p style="text-align:center;font-size:18px">기울기 측정을 위해<br>스마트폰의 동작 센서를 사용합니다.</p>
+  <p class="sub" style="text-align:center" id="startNote"></p>
+  <button class="btn primary" onclick="startSensor()">센서 시작</button>
+  <p class="msg" id="startMsg"></p>
+  <div class="spacer"></div>
+</section>
+
+<!-- 4. 메인 메뉴 -->
+<section class="screen menu" id="scr-menu">
+  <header><h1>Rail Cant Gauge</h1></header>
+  <div id="menuBanner"></div>
+  <button class="btn" onclick="go('calib')"><span class="ic">🎯</span><span>캘리브레이션<small id="menuCalibInfo"></small></span></button>
+  <button class="btn" onclick="go('measure')"><span class="ic">📐</span><span>캔트측정<small>실시간 캔트값 표시와 저장</small></span></button>
+  <button class="btn" onclick="go('sens')"><span class="ic">🎚️</span><span>민감도설정<small id="menuSensInfo"></small></span></button>
+  <button class="btn" onclick="go('help')"><span class="ic">❓</span><span>도움말<small>거치 방법, 부호 규칙, 정확도 안내</small></span></button>
+  <div class="spacer"></div>
+  <p class="sub" style="text-align:center">Rail Cant Gauge v0.2.0</p>
+</section>
+
+<!-- 5. 캔트측정 -->
+<section class="screen" id="scr-measure">
+  <header><button class="back" onclick="go('menu')">◀ 메뉴</button><h1>캔트측정</h1></header>
+  <div class="status"><span id="stCalib"></span><span id="stSens"></span></div>
+  <div id="measBanners"></div>
+  <div class="readout" id="readout"><span class="int">--</span><span class="dec">.-</span></div>
+  <div class="unit">mm (1435mm 기준)</div>
+  <div class="dirmsg" id="dirmsg"></div>
+  <button class="btn primary savebtn" onclick="saveRecord()">저 장</button>
+  <ul class="records" id="records"></ul>
+  <div class="hint">← 왼쪽으로 밀어서 삭제 · 최대 30개</div>
+</section>
+
+<!-- 6. 캘리브레이션 -->
+<section class="screen" id="scr-calib">
+  <header><button class="back" onclick="calibExit()">◀ 메뉴</button><h1>캘리브레이션</h1></header>
+  <div class="steps"><div id="sd1"></div><div id="sd2"></div><div id="sd3"></div></div>
+  <div id="calibBody" style="display:flex;flex-direction:column;flex:1"></div>
+</section>
+
+<!-- 7. 민감도 -->
+<section class="screen" id="scr-sens">
+  <header><button class="back" onclick="go('menu')">◀ 메뉴</button><h1>민감도설정</h1></header>
+  <p class="sub">진동이 클수록 "낮음"을 선택하세요. 모든 단계에서 약 2초 이내에 값이 안정되도록 맞춰져 있습니다.</p>
+  <div id="sensOpts"></div>
+</section>
+
+<!-- 8. 도움말 -->
+<section class="screen" id="scr-help">
+  <header><button class="back" onclick="go('menu')">◀ 메뉴</button><h1>도움말</h1></header>
+  <button class="btn" onclick="showGuideFromHelp()">📱 스마트폰 거치 방법 보기</button>
+  <div class="card">
+    <b>부호 규칙</b>
+    <p>스마트폰이 놓인 쪽 레일이 높으면 <b>+</b>, 낮으면 <b>−</b> 입니다.<br>
+    수평계를 좌우 반전하면 값의 크기는 같고 부호만 바뀝니다.</p>
+  </div>
+  <div class="card">
+    <b>캔트 환산</b>
+    <p>레일두부 중앙 사이 1500mm에서 측정한 높이차를 1435mm 기준으로 환산하여 표시합니다.<br>
+    캔트 = 1435 × sin(기울기)</p>
+  </div>
+  <div class="card">
+    <b>정확도 안내</b>
+    <p>표시는 0.1mm 단위이지만, 실제 정확도는 스마트폰 센서와 브라우저가 제공하는 성능에 따릅니다.
+    숫자가 <span style="color:var(--stable)">청록색</span>이면 값이 안정된 상태이고, 흰색이면 아직 흔들리는 상태입니다.</p>
+  </div>
+  <div class="card">
+    <b>현장 사용 유의사항</b>
+    <ol>
+      <li>레일두부 위의 이물질(자갈 가루, 기름)을 닦고 올려놓으세요.</li>
+      <li>수평계를 레일에 직각으로 놓으세요.</li>
+      <li>폰을 거치대에서 다시 끼웠다면 반전검증을 다시 하세요.</li>
+      <li>멀티플타이탬퍼 가동 중에는 민감도를 "낮음"으로 설정하세요.</li>
+    </ol>
+  </div>
+  <div class="card">
+    <b>기종</b>
+    <p id="helpDevice"></p>
+    <button class="btn" onclick="changeDevice()">기종 다시 선택</button>
+  </div>
+  <p class="sub" style="text-align:center">Rail Cant Gauge v0.2.0</p>
+</section>
+
+<script>
+'use strict';
+/* ================= 상수 ================= */
+const VERSION = '0.2.0';
+const L_MEAS = 1500;    // 측정 기준길이 (mm)
+const L_DISP = 1435;    // 표시 기준길이 (mm)
+const BLOCK  = 20;      // 스케일 블럭 높이 (mm)
+const MAX_REC = 30;
+const RANGE  = 200;     // 측정 범위 (mm)
+const REV_TOL = 1.0;    // 반전 허용오차 (mm)
+const PRESETS = {
+  high:   {label:'높음', W:0.5, T:0.3, R:2, desc:'장비 정지, 조용한 환경'},
+  normal: {label:'보통', W:1.0, T:0.5, R:4, desc:'일반 (기본값)'},
+  low:    {label:'낮음', W:1.5, T:0.8, R:6, desc:'멀티플타이탬퍼 가동 중, 진동 큼'},
+};
+
+/* ================= 저장소 ================= */
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+};
+const S = {
+  device:   store.get('rcg.device', null),
+  calib:    store.get('rcg.calib', null),
+  sens:     store.get('rcg.sensitivity', 'normal'),
+  records:  store.get('rcg.records', []),
+  guideSeen:store.get('rcg.guideSeen', false),
+};
+if(!PRESETS[S.sens]) S.sens = 'normal';
+
+/* ================= 유틸 ================= */
+const $ = id => document.getElementById(id);
+const now = () => performance.now() / 1000;
+const avg = a => a.length ? a.reduce((x,y)=>x+y,0) / a.length : 0;
+const std = a => { if(a.length < 2) return Infinity; const m = avg(a); return Math.sqrt(avg(a.map(v=>(v-m)*(v-m)))); };
+function trim(arr, tmin){ while(arr.length && arr[0].t < tmin) arr.shift(); }
+const pad = n => String(n).padStart(2,'0');
+function hms(d = new Date()){ return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; }
+function dateStr(ts){ const d = new Date(ts); return `${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`; }
+function fmt(c){ // → {sign, int, dec, value}
+  let v = Math.round(c * 10) / 10;
+  if(Object.is(v, -0)) v = 0;
+  const sign = v > 0 ? '+' : v < 0 ? '−' : '';
+  const [i, d] = Math.abs(v).toFixed(1).split('.');
+  return {sign, int: sign + i, dec: '.' + d, value: v, text: sign + i + '.' + d};
+}
+
+/* ================= 화면 전환 ================= */
+let current = null;
+function go(name){
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  $('scr-' + name).classList.add('active');
+  current = name;
+  if(name === 'menu') renderMenu();
+  if(name === 'measure'){ renderStatus(); renderRecords(); requestWake(); }
+  else releaseWake();
+  if(name === 'calib') calibStart();
+  if(name === 'sens') renderSens();
+  if(name === 'help') $('helpDevice').textContent = '현재 선택: ' + (S.device === 'ios' ? '아이폰' : '안드로이드폰');
+  window.scrollTo(0,0);
+}
+
+/* ================= 기종 / 안내 ================= */
+function selectDevice(d){
+  S.device = d; store.set('rcg.device', d);
+  if(!S.guideSeen) showGuide(false); else afterGuide();
+}
+function changeDevice(){ go('device'); }
+function showGuide(fromHelp){
+  $('guideBack').style.display = fromHelp ? '' : 'none';
+  $('guideCheckWrap').style.display = fromHelp ? 'none' : '';
+  $('guideNext').textContent = fromHelp ? '도움말로 돌아가기' : '확인';
+  $('guideNext').onclick = fromHelp ? () => go('help') : guideDone;
+  go('guide');
+}
+function showGuideFromHelp(){ showGuide(true); }
+function guideDone(){
+  if($('guideCheck').checked){ S.guideSeen = true; store.set('rcg.guideSeen', true); }
+  afterGuide();
+}
+function afterGuide(){
+  if(sensorOn){ go(S.calib ? 'menu' : 'calib'); return; }
+  $('startNote').textContent = S.device === 'ios'
+    ? '아이폰은 다음 화면에서 "동작 및 방향" 접근을 [허용]해 주세요.'
+    : '버튼을 누르면 측정이 시작됩니다.';
+  go('start');
+}
+
+/* 거치 안내 일러스트 */
+$('guideSvg').innerHTML = `
+<svg viewBox="0 0 360 214" xmlns="http://www.w3.org/2000/svg" font-family="Paperozi, sans-serif" role="img" aria-label="레일 위에 수평계를 걸쳐 놓은 모습">
+  <defs>
+    <linearGradient id="gLevel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e4e6e9"/><stop offset="1" stop-color="#a9adb2"/></linearGradient>
+    <linearGradient id="gRail" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c9ccd0"/><stop offset="1" stop-color="#6b7076"/></linearGradient>
+    <g id="rail">
+      <path d="M-11 0 h22 v11 h-7 v22 h18 v6 h-44 v-6 h18 v-22 h-7 z" fill="url(#gRail)" stroke="#2b2e33" stroke-width="1"/>
+    </g>
+  </defs>
+  <text x="180" y="16" fill="#c4c7cc" font-size="14" text-anchor="middle" font-weight="600">① 옆에서 본 모습</text>
+  <!-- 자갈 -->
+  <rect x="0" y="176" width="360" height="38" fill="#2a2d31"/>
+  <g fill="#44484e"><circle cx="18" cy="188" r="5"/><circle cx="44" cy="196" r="6"/><circle cx="80" cy="186" r="4"/><circle cx="112" cy="198" r="6"/><circle cx="150" cy="188" r="5"/><circle cx="196" cy="197" r="6"/><circle cx="232" cy="186" r="4"/><circle cx="268" cy="196" r="5"/><circle cx="306" cy="188" r="6"/><circle cx="342" cy="198" r="5"/></g>
+  <!-- 침목 -->
+  <rect x="8" y="158" width="344" height="20" rx="3" fill="#5c6066" stroke="#2b2e33"/>
+  <!-- 레일 (단면) -->
+  <use href="#rail" x="62" y="119"/>
+  <use href="#rail" x="298" y="119"/>
+  <!-- 수평계 -->
+  <rect x="12" y="104" width="336" height="15" rx="2" fill="url(#gLevel)" stroke="#2b2e33"/>
+  <rect x="164" y="107" width="32" height="9" rx="4.5" fill="#f4f5f6" stroke="#55595f"/>
+  <ellipse cx="180" cy="111.5" rx="6" ry="2.6" fill="#ffffff" stroke="#8b9096"/>
+  <!-- 거치대 + 스마트폰 (왼쪽 끝) -->
+  <path d="M16 104 v-12 h4 v6 h88 v-6 h4 v12 z" fill="#7a7f85" stroke="#2b2e33"/>
+  <rect x="22" y="91" width="84" height="7" rx="2" fill="#1d2024" stroke="#9aa0a6"/>
+  <line x1="26" y1="91.5" x2="102" y2="91.5" stroke="#e6e7e9" stroke-width="1.2"/>
+  <!-- 화면 위 표시 -->
+  <path d="M64 86 v-14" stroke="#e6e7e9" stroke-width="2"/><path d="M64 66 l-5 7 h10 z" fill="#e6e7e9"/>
+  <text x="74" y="76" fill="#e6e7e9" font-size="14">화면 위</text>
+  <!-- 1500mm 치수 -->
+  <line x1="62" y1="40" x2="298" y2="40" stroke="#9aa0a6"/>
+  <line x1="62" y1="34" x2="62" y2="62" stroke="#9aa0a6" stroke-dasharray="3 3"/>
+  <line x1="298" y1="34" x2="298" y2="100" stroke="#9aa0a6" stroke-dasharray="3 3"/>
+  <path d="M62 40 l7 -4 v8 z M298 40 l-7 -4 v8 z" fill="#9aa0a6"/>
+  <rect x="152" y="31" width="56" height="18" fill="#1e2329"/>
+  <text x="180" y="45" fill="#e6e7e9" font-size="14" text-anchor="middle" font-weight="600">1500mm</text>
+  <!-- 레일 이름 -->
+  <text x="62" y="208" fill="#e6e7e9" font-size="14" text-anchor="middle" font-weight="600">스마트폰쪽 레일</text>
+  <text x="298" y="208" fill="#b7bbc0" font-size="14" text-anchor="middle">반대쪽 레일</text>
+</svg>
+<p class="figcap">수평계를 레일에 직각으로 걸쳐 놓고, 스마트폰은 한쪽 끝에 올립니다.</p>
+
+<svg viewBox="0 0 360 156" xmlns="http://www.w3.org/2000/svg" font-family="Paperozi, sans-serif" role="img" aria-label="위에서 본 스마트폰 거치 방향">
+  <text x="180" y="16" fill="#c4c7cc" font-size="14" text-anchor="middle" font-weight="600">② 위에서 본 모습 (수평계 끝부분)</text>
+  <!-- 수평계 윗면 -->
+  <rect x="20" y="62" width="340" height="40" fill="url(#gLevel2)" stroke="#2b2e33"/>
+  <defs><linearGradient id="gLevel2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d6d9dc"/><stop offset="1" stop-color="#b3b7bc"/></linearGradient></defs>
+  <rect x="14" y="58" width="8" height="48" rx="2" fill="#5c6066"/>
+  <!-- 거치대 -->
+  <rect x="24" y="44" width="132" height="76" rx="8" fill="#7a7f85" stroke="#2b2e33"/>
+  <rect x="30" y="50" width="120" height="64" rx="10" fill="#5c6066"/>
+  <!-- 스마트폰 -->
+  <rect x="32" y="52" width="116" height="60" rx="11" fill="#1d2024" stroke="#b7bbc0" stroke-width="1.5"/>
+  <rect x="40" y="58" width="100" height="48" rx="6" fill="#3a3e44"/>
+  <circle cx="141" cy="82" r="2.5" fill="#6b7076"/>
+  <text x="90" y="87" fill="#f2f3f4" font-size="14" text-anchor="middle" font-weight="600">화면 ↑</text>
+  <!-- USB-C 포트 (바깥 끝 방향) -->
+  <rect x="31" y="77" width="4" height="10" rx="2" fill="#f2f3f4"/>
+  <!-- 콜아웃 -->
+  <path d="M33 87 V142 H60" fill="none" stroke="#e6e7e9" stroke-width="1.5"/>
+  <circle cx="33" cy="82" r="8" fill="none" stroke="#e6e7e9" stroke-width="1.5"/>
+  <text x="64" y="147" fill="#f2f3f4" font-size="14" font-weight="600">USB-C 포트 → 수평계 끝 방향</text>
+  <!-- 길이 방향 -->
+  <path d="M170 82 H332" stroke="#9aa0a6" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <path d="M340 82 l-9 -5 v10 z" fill="#9aa0a6"/>
+  <text x="258" y="52" fill="#c4c7cc" font-size="14" text-anchor="middle">수평계 중앙 쪽 →</text>
+  <text x="258" y="122" fill="#9aa0a6" font-size="14" text-anchor="middle">폰 긴 방향 = 수평계 긴 방향</text>
+</svg>
+<p class="figcap">충전포트가 수평계 끝을 향하도록 거치대에 끼웁니다.</p>
+
+<svg viewBox="0 0 360 120" xmlns="http://www.w3.org/2000/svg" font-family="Paperozi, sans-serif" role="img" aria-label="부호 규칙">
+  <text x="180" y="16" fill="#c4c7cc" font-size="14" text-anchor="middle" font-weight="600">③ 부호 규칙</text>
+  <!-- + 예시 -->
+  <rect x="34" y="78" width="14" height="16" fill="#9aa0a6"/>
+  <rect x="140" y="86" width="14" height="16" fill="#9aa0a6"/>
+  <line x1="24" y1="74" x2="164" y2="84" stroke="#d6d9dc" stroke-width="6"/>
+  <rect x="26" y="66" width="40" height="5" fill="#f2f3f4" transform="rotate(4 26 66)"/>
+  <text x="94" y="50" fill="#ffffff" font-size="22" text-anchor="middle" font-weight="700">+</text>
+  <text x="94" y="116" fill="#c4c7cc" font-size="14" text-anchor="middle">폰쪽이 높음</text>
+  <!-- − 예시 -->
+  <rect x="206" y="86" width="14" height="16" fill="#9aa0a6"/>
+  <rect x="312" y="78" width="14" height="16" fill="#9aa0a6"/>
+  <line x1="196" y1="84" x2="336" y2="74" stroke="#d6d9dc" stroke-width="6"/>
+  <rect x="198" y="76" width="40" height="5" fill="#f2f3f4" transform="rotate(-4 198 76)"/>
+  <text x="266" y="50" fill="#ffffff" font-size="22" text-anchor="middle" font-weight="700">−</text>
+  <text x="266" y="116" fill="#c4c7cc" font-size="14" text-anchor="middle">폰쪽이 낮음</text>
+</svg>
+`;
+
+/* ================= 센서 ================= */
+let sensorOn = false, lastSampleT = 0, firstSampleT = 0;
+const raw = [];   // {t, s, sx, sz, gyro}
+const med = [];   // {t, s} 중앙값 필터 출력
+const hist = [];  // {t, c} 필터 출력 캔트 (안정 판정용)
+let result = null;           // 최신 처리 결과
+let stableFlag = false, unstableSince = null;
+
+function onMotion(e){
+  const a = e.accelerationIncludingGravity;
+  if(!a || a.x == null || a.y == null || a.z == null) return;
+  const g = Math.hypot(a.x, a.y, a.z);
+  if(g < 1) return;
+  const t = now();
+  const r = e.rotationRate;
+  const gyro = r ? Math.hypot(r.alpha || 0, r.beta || 0, r.gamma || 0) : 0;
+  if(!firstSampleT) firstSampleT = t;
+  lastSampleT = t;
+  raw.push({t, s: a.y / g, sx: a.x / g, sz: a.z / g, gyro});
+  trim(raw, t - 3);
+  // ① 중앙값 필터 (0.2초)
+  const w = [];
+  for(let i = raw.length - 1; i >= 0 && raw[i].t >= t - 0.2; i--) w.push(raw[i].s);
+  w.sort((x, y) => x - y);
+  med.push({t, s: w[w.length >> 1]});
+  trim(med, t - 3);
+}
+
+async function startSensor(){
+  $('startMsg').textContent = '';
+  try{
+    if(typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function'){
+      const p = await DeviceMotionEvent.requestPermission();
+      if(p !== 'granted'){ $('startMsg').textContent = '동작 센서 권한이 필요합니다. 설정에서 허용한 뒤 다시 시도하세요.'; return; }
+    }
+  }catch(err){
+    $('startMsg').textContent = '센서 권한 요청 실패: HTTPS 주소에서 열었는지 확인하세요.'; return;
+  }
+  if(typeof DeviceMotionEvent === 'undefined'){ $('startMsg').textContent = '이 기기/브라우저는 동작 센서를 지원하지 않습니다.'; return; }
+  window.addEventListener('devicemotion', onMotion);
+  sensorOn = true;
+  try{ if(screen.orientation && screen.orientation.lock) screen.orientation.lock('portrait').catch(()=>{}); }catch(e){}
+  go(S.calib ? 'menu' : 'calib');
+}
+
+/* 기본 스케일 부호 (캘리브레이션 전)
+   안드로이드: 화면 위로 놓으면 z=+g, 폰 상단이 내려가면 y<0 → 스마트폰쪽(USB-C쪽)이 높으면 y<0 → k=-1
+   아이폰(Safari): 부호 규칙이 반대인 경우가 많음 → k=+1
+   ※ 캘리브레이션 2단계에서 실제 부호로 확정됨 */
+function defaultK(){ return S.device === 'ios' ? 1 : -1; }
+function toCant(s, calib = S.calib){
+  const s0 = calib ? calib.s0 : 0;
+  const k  = calib ? calib.k  : defaultK();
+  return L_DISP * k * (s - s0);
+}
+
+/* ② 이동평균 + ③ 환산 + 안정 판정 (20Hz) */
+function process(){
+  const t = now();
+  if(!sensorOn || !med.length) { result = null; return; }
+  const P = PRESETS[S.sens];
+  const m = med.filter(p => p.t >= t - P.W);
+  if(!m.length){ result = null; return; }
+  const sf = avg(m.map(p => p.s));
+  const rr = raw.filter(p => p.t >= t - P.W);
+  const sx = avg(rr.map(p => p.sx)), sz = avg(rr.map(p => p.sz));
+  const cant = toCant(sf);
+  hist.push({t, c: cant}); trim(hist, t - 1.2);
+  // 안정 판정: 표준편차 창은 W와 합쳐 2초를 넘지 않도록 함 (최대 1.0초)
+  const sdWin = Math.min(1.0, 2.0 - P.W);
+  const recent = hist.filter(p => p.t >= t - sdWin);
+  const sd = (recent.length >= 4 && (t - firstSampleT) >= P.W + sdWin * 0.8) ? std(recent.map(p => p.c)) : Infinity;
+  let gmax = 0; for(const p of raw) if(p.t >= t - 0.5 && p.gyro > gmax) gmax = p.gyro;
+  const okNow = sd < P.T && gmax < P.R;
+  if(okNow){ stableFlag = true; unstableSince = null; }
+  else if(stableFlag){
+    if(unstableSince == null) unstableSince = t;
+    if(t - unstableSince >= 0.3){ stableFlag = false; unstableSince = null; }
+  }
+  result = {t, sf, sx, sz, cant, sd, gmax, stable: stableFlag, noData: (t - lastSampleT) > 1.0};
+}
+
+/* ================= 메인 루프 ================= */
+setInterval(() => {
+  process();
+  if(current === 'measure') renderMeasure();
+  if(current === 'calib') calibLive();
+  const ns = $('nosensor');
+  if(sensorOn && (current === 'measure' || current === 'calib') && result && result.noData){
+    ns.style.display = 'flex'; ns.textContent = '⚠ 센서 신호가 없습니다. 앱을 다시 실행해 주세요.';
+  } else if(sensorOn && (current === 'measure' || current === 'calib') && !result && firstSampleT === 0 && performance.now() > 3000){
+    ns.style.display = 'flex'; ns.textContent = '⚠ 센서 신호가 없습니다. 동작 센서 권한과 HTTPS 주소를 확인하세요.';
+  } else ns.style.display = 'none';
+}, 50);
+
+/* ================= 메뉴 ================= */
+function renderMenu(){
+  const c = S.calib;
+  $('menuCalibInfo').textContent = c ? `마지막: ${dateStr(c.date)}` + (c.reversalError != null ? ` · 반전오차 ${c.reversalError.toFixed(1)}mm` : ' · 반전검증 필요') : '아직 하지 않음 — 먼저 실행하세요';
+  $('menuSensInfo').textContent = `현재: ${PRESETS[S.sens].label}`;
+  $('menuBanner').innerHTML = c ? '' : '<div class="banner">캘리브레이션을 먼저 해주세요.</div>';
+}
+
+/* ================= 측정 화면 ================= */
+function renderStatus(){
+  $('stCalib').textContent = S.calib ? `캘리브레이션: ${dateStr(S.calib.date)}` : '캘리브레이션 안 됨';
+  $('stSens').textContent = `민감도 [${PRESETS[S.sens].label}]`;
+}
+function warnings(r){
+  const w = [];
+  if(!S.calib) w.push(['캘리브레이션을 먼저 해주세요.', '']);
+  if(r){
+    if(S.calib && S.calib.faceSign && r.sz * S.calib.faceSign < -0.5) w.push(['스마트폰 화면이 하늘을 향하도록 놓으세요.', 'danger']);
+    else if(Math.abs(r.sx) > Math.sin(5 * Math.PI / 180)) w.push(['스마트폰이 옆으로 기울어 있습니다. 거치 상태를 확인하세요.', '']);
+    if(Math.abs(r.cant) > RANGE) w.push(['측정 범위를 벗어났습니다.', 'danger']);
+  }
+  return w;
+}
+let lastBannerKey = '';
+function renderMeasure(){
+  const r = result;
+  const w = warnings(r);
+  const key = w.map(x => x[0]).join('|');
+  if(key !== lastBannerKey){
+    $('measBanners').innerHTML = w.map(([t, cls]) => `<div class="banner ${cls}">⚠ ${t}</div>`).join('');
+    lastBannerKey = key;
+  }
+  const ro = $('readout');
+  if(!r){ ro.innerHTML = '<span class="int">--</span><span class="dec">.-</span>'; ro.classList.remove('stable'); $('dirmsg').textContent = ''; return; }
+  const f = fmt(r.cant);
+  ro.innerHTML = `<span class="int">${f.int}</span><span class="dec">${f.dec}</span>`;
+  ro.classList.toggle('stable', r.stable);
+  $('dirmsg').textContent = f.value > 0 ? '이쪽(스마트폰쪽) 레일이 높습니다.'
+                          : f.value < 0 ? '이쪽(스마트폰쪽) 레일이 낮습니다.'
+                          : '좌우 레일 높이가 같습니다.';
+}
+
+/* ================= 저장 목록 ================= */
+function saveRecord(){
+  if(!result) return;
+  const f = fmt(result.cant);
+  S.records.unshift({time: hms(), cant: f.value});
+  if(S.records.length > MAX_REC) S.records.length = MAX_REC;   // 오래된 것부터 삭제
+  store.set('rcg.records', S.records);
+  renderRecords();
+  $('records').scrollTop = 0;
+  if(navigator.vibrate) navigator.vibrate(30);
+}
+function renderRecords(){
+  const ul = $('records');
+  ul.innerHTML = '';
+  if(!S.records.length){ ul.innerHTML = '<li class="empty">저장된 값이 없습니다.</li>'; return; }
+  S.records.forEach((rec, idx) => {
+    const li = document.createElement('li');
+    li.innerHTML = `<div class="del">삭제</div><div class="item"><span class="tm">${rec.time}</span><span>${fmt(rec.cant).text}</span></div>`;
+    attachSwipe(li, li.querySelector('.item'), idx);
+    ul.appendChild(li);
+  });
+}
+function attachSwipe(li, item, idx){
+  let x0 = null, y0 = null, dx = 0, horiz = null;
+  item.addEventListener('pointerdown', e => { x0 = e.clientX; y0 = e.clientY; dx = 0; horiz = null; item.style.transition = 'none'; });
+  item.addEventListener('pointermove', e => {
+    if(x0 == null) return;
+    const ddx = e.clientX - x0, ddy = e.clientY - y0;
+    if(horiz == null && (Math.abs(ddx) > 8 || Math.abs(ddy) > 8)){
+      horiz = Math.abs(ddx) > Math.abs(ddy);
+      if(horiz){ li.classList.add('swiping'); try{ item.setPointerCapture(e.pointerId); }catch(_){} }
+    }
+    if(!horiz) return;
+    dx = Math.min(0, ddx);
+    item.style.transform = `translateX(${dx}px)`;
+  });
+  const end = () => {
+    if(x0 == null) return;
+    item.style.transition = '';
+    if(horiz && dx < -Math.min(110, li.clientWidth * 0.3)){
+      item.style.transform = `translateX(-100%)`;
+      setTimeout(() => { S.records.splice(idx, 1); store.set('rcg.records', S.records); renderRecords(); }, 180);
+    } else { item.style.transform = ''; setTimeout(() => li.classList.remove('swiping'), 200); }
+    x0 = null;
+  };
+  item.addEventListener('pointerup', end);
+  item.addEventListener('pointercancel', end);
+}
+
+/* ================= 민감도 ================= */
+function renderSens(){
+  $('sensOpts').innerHTML = Object.entries(PRESETS).map(([k, p]) => `
+    <label class="opt ${S.sens === k ? 'sel' : ''}">
+      <input type="radio" name="sens" value="${k}" ${S.sens === k ? 'checked' : ''} onchange="setSens('${k}')">
+      <div><b>${p.label}</b><span>${p.desc}</span><span>평균 ${p.W}초 · 안정기준 ${p.T}mm · 회전 ${p.R}°/s</span></div>
+    </label>`).join('');
+}
+function setSens(k){ S.sens = k; store.set('rcg.sensitivity', k); stableFlag = false; renderSens(); }
+
+/* ================= 캘리브레이션 ================= */
+let cal = null;      // 진행 중 상태
+let capturing = null;
+
+function setStepBar(n){ [1,2,3].forEach(i => $('sd' + i).classList.toggle('on', i <= n)); }
+function calibExit(){ capturing = null; go('menu'); }
+
+function calibStart(){
+  cal = {step: 0};
+  setStepBar(0);
+  if(S.calib){
+    $('calibBody').innerHTML = `
+      <div class="card"><p>마지막 캘리브레이션: <b>${dateStr(S.calib.date)}</b><br>
+      반전오차: <b>${S.calib.reversalError != null ? S.calib.reversalError.toFixed(1) + 'mm' : '미검증'}</b></p></div>
+      <p>폰을 거치대에서 다시 끼웠다면 <b>반전검증</b>만 다시 하면 됩니다.</p>
+      <div class="spacer"></div>
+      <button class="btn blue" onclick="calibStep3()">반전검증만 하기</button>
+      <button class="btn" onclick="calibStep1()">전체 캘리브레이션 (1~3단계)</button>`;
+  } else calibStep1();
+}
+
+function liveBox(){ return `<div class="live" id="calLive">--</div><p class="msg" id="calMsg"></p>`; }
+function calibLive(){
+  const el = $('calLive'); if(!el) return;
+  if(!result){ el.textContent = '--'; return; }
+  const c = cal && cal.temp ? toCant(result.sf, cal.temp) : result.cant;
+  el.textContent = fmt(c).text + ' mm';
+  el.classList.toggle('stable', result.stable);
+}
+
+/* 안정 후 2초 평균 측정 */
+function capture(btn){
+  return new Promise((resolve) => {
+    const token = {}; capturing = token;
+    btn.disabled = true;
+    let phase = 'wait', t0 = now(), tStart = 0, vals = [], szs = [];
+    const id = setInterval(() => {
+      if(capturing !== token){ clearInterval(id); btn.disabled = false; return; }
+      const t = now(), r = result, msg = $('calMsg');
+      if(!r){ if(msg) msg.textContent = '센서 신호를 기다리는 중...'; return; }
+      if(phase === 'wait'){
+        const waited = t - t0;
+        if(msg) msg.textContent = waited < 10 ? '값이 안정되기를 기다리는 중... (움직이지 마세요)' : '진동이 커서 안정되지 않습니다. 현재 값으로 측정합니다.';
+        if(r.stable || waited >= 12){ phase = 'collect'; tStart = t; vals = []; szs = []; }
+      } else {
+        vals.push(r.sf); szs.push(r.sz);
+        if(msg) msg.textContent = `측정 중... ${Math.max(0, Math.ceil(2 - (t - tStart)))}초`;
+        if(t - tStart >= 2){
+          clearInterval(id); capturing = null; btn.disabled = false;
+          if(msg) msg.textContent = '';
+          resolve({s: avg(vals), sz: avg(szs)});
+        }
+      }
+    }, 50);
+  });
+}
+
+/* 1단계: 제로조정 */
+function calibStep1(){
+  cal = {step: 1};
+  setStepBar(1);
+  $('calibBody').innerHTML = `
+    <h2>1단계 · 제로조정</h2>
+    <ol>
+      <li>평평한 바닥 또는 레일 위에 수평계를 놓으세요.</li>
+      <li>수평계의 <b>기포가 중앙</b>에 오도록 맞추세요. (쐐기 등 사용)</li>
+      <li>손을 떼고 <b>[제로 측정]</b>을 누르세요.</li>
+    </ol>
+    ${liveBox()}
+    <div class="spacer"></div>
+    <button class="btn primary" id="calBtn">제로 측정</button>`;
+  $('calBtn').onclick = async e => {
+    const r = await capture(e.currentTarget);
+    cal.s0 = r.s; cal.faceSign = r.sz >= 0 ? 1 : -1;
+    calibStep2();
+  };
+}
+
+/* 2단계: 스케일 조정 */
+function calibStep2(){
+  cal.step = 2;
+  setStepBar(2);
+  const expect = (BLOCK * L_DISP / L_MEAS).toFixed(1);
+  $('calibBody').innerHTML = `
+    <h2>2단계 · 스케일 조정</h2>
+    <ol>
+      <li>1단계 상태 그대로 두세요.</li>
+      <li><b>스마트폰쪽 접촉점</b>(반대쪽 접촉점에서 1500mm 지점) 바로 아래에 <b>높이 ${BLOCK}mm 블럭</b>을 넣으세요.</li>
+      <li>손을 떼고 <b>[블럭 측정]</b>을 누르세요.</li>
+    </ol>
+    <p class="sub">⚠ 블럭을 수평계 맨 끝(1800mm 지점)에 놓으면 스케일이 틀어집니다.</p>
+    ${liveBox()}
+    <div class="spacer"></div>
+    <div class="row2"><button class="btn" onclick="calibStep1()">◀ 1단계</button><button class="btn primary" id="calBtn">블럭 측정</button></div>`;
+  $('calBtn').onclick = async e => {
+    const r = await capture(e.currentTarget);
+    const ds = r.s - cal.s0;
+    if(Math.abs(ds) < 0.004){
+      $('calMsg').textContent = '블럭에 의한 기울기가 감지되지 않았습니다. 블럭 위치를 확인하고 다시 측정하세요.';
+      return;
+    }
+    const k = (BLOCK / L_MEAS) / ds;   // 부호 포함 → 스마트폰쪽 블럭 = +
+    cal.k = k;
+    cal.temp = {s0: cal.s0, k};
+    const shown = toCant(r.s, cal.temp);
+    const kOk = Math.abs(k) > 0.8 && Math.abs(k) < 1.25;
+    $('calibBody').innerHTML = `
+      <h2>2단계 · 결과</h2>
+      <div class="card"><table class="res">
+        <tr><td>블럭 위 표시값</td><td>${fmt(shown).text} mm</td></tr>
+        <tr><td>기대값</td><td>+${expect} mm</td></tr>
+        <tr><td>스케일 계수 |k|</td><td>${Math.abs(k).toFixed(4)}</td></tr>
+      </table></div>
+      ${kOk ? '<p class="ok">스케일 조정 완료</p>' : '<p class="ng">스케일 계수가 비정상입니다(0.8~1.25 범위 밖). 블럭 높이와 위치를 확인하세요.</p>'}
+      <div class="spacer"></div>
+      <div class="row2"><button class="btn" onclick="calibStep2()">다시 측정</button>
+      <button class="btn primary" ${kOk ? '' : 'disabled'} onclick="calibSave12()">3단계로</button></div>`;
+  };
+}
+function calibSave12(){
+  S.calib = {s0: cal.s0, k: cal.k, faceSign: cal.faceSign, date: Date.now(), reversalError: null, version: VERSION};
+  store.set('rcg.calib', S.calib);
+  calibStep3();
+}
+
+/* 3단계: 좌우 반전 검증 */
+function calibStep3(){
+  cal = {step: 3, A: null, B: null};
+  setStepBar(3);
+  $('calibBody').innerHTML = `
+    <h2>3단계 · 좌우 반전 검증</h2>
+    <p id="revGuide"></p>
+    ${liveBox()}
+    <div class="card"><table class="res">
+      <tr><td>A (처음 방향)</td><td id="vA">-</td></tr>
+      <tr><td>B (반전 후)</td><td id="vB">-</td></tr>
+      <tr><td>|A + B| (허용 ${REV_TOL.toFixed(1)}mm)</td><td id="vAB">-</td></tr>
+    </table></div>
+    <div id="revResult"></div>
+    <div class="spacer"></div>
+    <div id="revBtns"></div>`;
+  revStepA();
+}
+function revStepA(){
+  $('revGuide').innerHTML = '① 캔트가 있는 레일(또는 경사면) 위에 수평계를 놓고 <b>[A 측정]</b>을 누르세요.';
+  $('revBtns').innerHTML = '<button class="btn primary" id="calBtn">A 측정</button>';
+  $('calBtn').onclick = async e => {
+    const r = await capture(e.currentTarget);
+    cal.sA = r.s; cal.A = toCant(r.s);
+    $('vA').textContent = fmt(cal.A).text + ' mm';
+    revStepB();
+  };
+}
+function revStepB(){
+  $('revGuide').innerHTML = '② <b>같은 위치</b>에서 수평계를 <b>좌우 반전</b>하여 놓고 <b>[B 측정]</b>을 누르세요.';
+  $('revBtns').innerHTML = '<button class="btn primary" id="calBtn">B 측정</button>';
+  $('calBtn').onclick = async e => {
+    const r = await capture(e.currentTarget);
+    cal.sB = r.s; cal.B = toCant(r.s);
+    $('vB').textContent = fmt(cal.B).text + ' mm';
+    revJudge();
+  };
+}
+function revJudge(){
+  const sum = cal.A + cal.B, err = Math.abs(sum);
+  $('vAB').textContent = err.toFixed(1) + ' mm';
+  if(err <= REV_TOL){
+    S.calib.reversalError = err; S.calib.date = Date.now();
+    store.set('rcg.calib', S.calib);
+    $('revResult').innerHTML = `<p class="ok">✔ 합격 — 반전 오차 ${err.toFixed(1)}mm</p><p class="sub">측정 캔트 ≈ ±${(Math.abs(cal.A - cal.B) / 2).toFixed(1)}mm</p>`;
+    $('revGuide').textContent = '캘리브레이션이 완료되었습니다.';
+    $('revBtns').innerHTML = `<button class="btn primary" onclick="go('measure')">캔트측정 시작</button><button class="btn" onclick="go('menu')">메뉴로</button>`;
+  } else {
+    $('revResult').innerHTML = `<p class="ng">✖ 불합격 — 반전 오차 ${err.toFixed(1)}mm</p>
+      <p class="sub">거치대 고정 상태, 레일두부 이물질, 수평계 바닥면을 확인하세요.</p>`;
+    $('revGuide').textContent = '제로를 자동 보정한 뒤 다시 검증할 수 있습니다.';
+    $('revBtns').innerHTML = `<button class="btn warn" onclick="revAutoFix()">제로 자동 보정 후 재검증</button><button class="btn" onclick="calibStep3()">다시 측정</button>`;
+  }
+}
+function revAutoFix(){
+  // 표시값이 A+B=0 이 되도록 s0 보정: Δs0 = (A+B) / (2·1435·k)
+  const d = (cal.A + cal.B) / (2 * L_DISP * S.calib.k);
+  S.calib.s0 += d;
+  S.calib.reversalError = null;
+  store.set('rcg.calib', S.calib);
+  calibStep3();
+  $('calMsg').textContent = '제로를 보정했습니다. 다시 A, B를 측정하세요.';
+}
+
+/* ================= 화면 꺼짐 방지 ================= */
+let wakeLock = null;
+async function requestWake(){
+  try{ if('wakeLock' in navigator && !wakeLock){ wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); } }catch(e){}
+}
+function releaseWake(){ try{ if(wakeLock){ wakeLock.release(); wakeLock = null; } }catch(e){} }
+document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible' && current === 'measure') requestWake(); });
+
+/* ================= 시작 ================= */
+if(!S.device) go('device');
+else if(!S.guideSeen) showGuide(false);
+else afterGuide();
+</script>
+</body>
+</html>
