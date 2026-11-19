@@ -25,8 +25,8 @@
     --canvas:#0b0e11; --card:#1e2329; --elev:#2b3139; --line:#2b3139;
     --body:#eaecef; --white:#ffffff; --muted:#8a93a2; --muted2:#a3abb6;
     --primary:#fcd535; --primary-active:#f0b90b; --primary-dis:#3a3a1f; --on-primary:#181a20;
-    --stable:#2dbdb6;        /* accent-turquoise : 캔트 안정 */
-    --teal:#2dbdb6; --teal-active:#239f99; --teal-dis:#1b3533; --on-teal:#0b0e11;
+    --stable:#fcd535;        /* primary : 캔트 안정 (야간·터널 시인성) */
+    --teal:#fcd535; --teal-active:#f0b90b; --teal-dis:#3a3a1f; --on-teal:#181a20;   /* 측정 화면 버튼 (V0.4.0: 노랑) */
     --down:#f6465d; --info:#3b82f6;
     --r-sm:4px; --r-md:6px; --r-lg:8px; --r-xl:12px;
     --font:'Paperozi',-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;
@@ -37,7 +37,7 @@
     font-family:var(--font); font-size:18px; font-weight:400; overscroll-behavior:none; -webkit-user-select:none; user-select:none;}
   body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);}
   :focus-visible{outline:none; box-shadow:0 0 0 2px rgba(59,130,246,.5);}
-  .screen{display:none; min-height:100vh; min-height:100dvh; flex-direction:column; padding:14px 16px 16px;}
+  .screen{display:none; min-height:100vh; min-height:var(--appH,100dvh); flex-direction:column; padding:14px 16px 16px;}
   .screen.active{display:flex;}
   header{display:flex; align-items:center; gap:12px; min-height:60px; margin-bottom:10px; border-bottom:1px solid var(--line); padding-bottom:8px;}
   header h1{font-size:24px; margin:0; font-weight:700; color:var(--white); line-height:1.3;}
@@ -84,12 +84,22 @@
   .banner.danger{border-left-color:var(--down);}
   .modelabel{text-align:center; font-size:19px; font-weight:700; color:var(--muted2); margin-top:12px; min-height:26px;}
   .modelabel.fixed{color:var(--teal);}
-  .readout{text-align:center; margin:6px 0 2px; font-family:var(--num); font-variant-numeric:tabular-nums; font-feature-settings:"tnum";
-    font-weight:700; letter-spacing:-0.3px; line-height:1.1; color:var(--white); transition:color .15s; white-space:nowrap;}
-  .readout .int{font-size:min(26vw,150px);}
-  .readout .dec{font-size:min(19.5vw,112.5px);} /* 정수부의 75% */
+  .readout{display:flex; justify-content:center; align-items:flex-end; margin:6px 0 2px; font-family:var(--num); font-variant-numeric:tabular-nums; font-feature-settings:"tnum";
+    font-weight:700; letter-spacing:-0.3px; line-height:1; color:var(--white); transition:color .15s, opacity .2s; white-space:nowrap;}
+  .readout .int{font-size:min(calc(var(--appW,100vw) * 0.205),120px);}
+  .readout .dec{font-size:min(calc(var(--appW,100vw) * 0.15375),90px);}          /* 정수부의 75% */
+  .readout .ru{font-size:min(calc(var(--appW,100vw) * 0.107625),63px);            /* 소수점 자리의 70% */
+    height:1.1em; line-height:1.1em; padding-bottom:0.107em; margin-left:0.15em; color:inherit;}
+  .readout{position:relative;}
+  .readout .num{display:inline-flex; justify-content:flex-end; align-items:flex-end; flex:none;}   /* 정수부 폭 고정, 오른쪽 정렬 */
+  .readout .num > *, .readout > *{flex-shrink:0;}
+  .readout .sg,.readout .dot{display:inline-block; height:1.1em; line-height:1.1em;}
+  .readout .rl{display:inline-block; height:1.1em; overflow:hidden;}
+  .readout .strip{display:flex; flex-direction:column; will-change:transform;}
+  .readout .strip span{display:block; height:1.1em; line-height:1.1em;}
   .readout.stable{color:var(--stable);}
-  .unit{text-align:center; color:var(--muted2); font-size:20px;}
+  .readout.nodata{opacity:.25;}
+  .unit{text-align:center; color:var(--muted2); font-size:20px; min-height:26px;}
   .unit .spread{font-family:var(--num); color:var(--body); font-weight:500;}
   .dirmsg{text-align:center; font-size:24px; font-weight:700; color:var(--white); min-height:34px; margin:8px 0 10px; line-height:1.3;}
   .actions{display:flex; gap:10px;}
@@ -142,15 +152,16 @@
   .legend i{display:inline-block; width:18px; height:4px; vertical-align:middle; margin-right:6px; border-radius:2px;}
 
   /* 가로 방향 덮개 */
-  #landscape{display:none; position:fixed; inset:0; background:var(--canvas); z-index:100; align-items:center; justify-content:center; text-align:center; font-size:26px; font-weight:700; padding:24px; color:var(--white);}
-  @media (orientation:landscape) and (max-height:600px){ #landscape{display:flex;} }
+  /* 화면 회전 고정: 기기가 가로로 돌면 앱 화면을 반대로 돌려 세로처럼 보이게 함 */
+  #app{position:relative;}
+  #app.rot{position:fixed; top:0; left:0; transform-origin:0 0; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch;}
   .check{display:flex; align-items:center; gap:12px; font-size:19px; margin:8px 0; min-height:48px;}
   .check input{width:28px; height:28px; accent-color:var(--primary);}
 </style>
 </head>
 <body>
 
-<div id="landscape">📱 화면을 세로로 돌려주세요.<br><span class="sub">스마트폰 설정에서 화면 회전 잠금을 켜두면 편리합니다.</span></div>
+<div id="app">
 <div class="nosensor" id="nosensor"></div>
 
 <!-- 기종 선택 -->
@@ -200,7 +211,7 @@
   <button class="btn" onclick="go('diag')"><span class="ic">📈</span><span>진단<small>센서 잡음·진동 확인</small></span></button>
   <button class="btn" onclick="go('help')"><span class="ic">❓</span><span>도움말<small>거치 방법, 부호 규칙, 측정 방법</small></span></button>
   <div class="spacer"></div>
-  <p class="sub" style="text-align:center">Rail Cant Gauge v0.3.0</p>
+  <p class="sub" style="text-align:center">Rail Cant Gauge v0.5.0</p>
 </section>
 
 <!-- 캔트측정 -->
@@ -209,8 +220,8 @@
   <div class="status"><span id="stCalib"></span><span id="stSens"></span></div>
   <div id="measBanners"></div>
   <div class="modelabel" id="modelabel"></div>
-  <div class="readout" id="readout"><span class="int">--</span><span class="dec">.-</span></div>
-  <div class="unit">mm <span id="spread" class="spread"></span></div>
+  <div class="readout nodata" id="readout"><span class="num int" id="rNum"><span class="sg" id="rSg"></span><span class="rl" id="rl0"></span><span class="rl" id="rl1"></span><span class="rl" id="rl2"></span></span><span class="dec dot">.</span><span class="dec rl" id="rl3"></span><span class="ru">mm</span></div>
+  <div class="unit"><span id="spread" class="spread"></span></div>
   <div class="dirmsg" id="dirmsg"></div>
   <div class="actions">
     <button class="btn outline" id="measBtn" onclick="measureToggle()">측정</button>
@@ -246,7 +257,7 @@
     <div><span>판정</span><b id="dgState">-</b></div>
   </div>
   <canvas id="diagChart"></canvas>
-  <div class="legend"><span><i style="background:#707a8a"></i>센서값</span><span><i style="background:#2dbdb6"></i>필터 후</span><span>최근 10초</span></div>
+  <div class="legend"><span><i style="background:#707a8a"></i>센서값</span><span><i style="background:#fcd535"></i>필터 후</span><span>최근 10초</span></div>
   <p class="sub">잡음과 흔들림은 ±2σ, 1435mm 기준 mm입니다. 최소 단위가 2mm 이상이면 브라우저가 센서값을 거칠게 반올림하고 있는 것입니다.</p>
 </section>
 
@@ -261,7 +272,7 @@
   </div>
   <div class="card">
     <b>측정 방법</b>
-    <p><b>실시간</b>: 흰색은 값이 흔들리는 중, <span style="color:var(--stable)">청록색</span>은 안정된 상태입니다. 안정되면 숫자를 고정하고, 실제 변화가 일정 크기 이상일 때만 바꿉니다.</p>
+    <p><b>실시간</b>: 흰색은 값이 흔들리는 중, <span style="color:var(--stable)">노란색</span>은 안정된 상태입니다. 안정되면 숫자를 고정하고, 실제 변화가 일정 크기 이상일 때만 바꿉니다.</p>
     <p><b>[측정]</b>: 몇 초 동안 평균을 내서 값을 고정합니다. 진동이 있는 현장에서는 이 값을 읽고 [저장]하세요. [실시간]을 누르면 다시 실시간 표시로 돌아갑니다.</p>
     <p><b>흔들림 ±</b>: 값이 흔들리는 폭입니다. 이 값이 크면 진동이 큰 상태입니다.</p>
   </div>
@@ -283,17 +294,22 @@
     </ol>
   </div>
   <div class="card">
+    <b>화면 회전</b>
+    <p>폰을 돌려도 앱 화면은 세로로 유지됩니다. 아이폰은 제어 센터에서 <b>세로 방향 잠금</b>을 켜두면 화면이 아예 돌아가지 않아 더 편리합니다.</p>
+  </div>
+  <div class="card">
     <b>기종</b>
     <p id="helpDevice"></p>
     <button class="btn" onclick="changeDevice()">기종 다시 선택</button>
   </div>
-  <p class="sub" style="text-align:center">Rail Cant Gauge v0.3.0</p>
+  <p class="sub" style="text-align:center">Rail Cant Gauge v0.5.0</p>
 </section>
+</div><!-- /#app -->
 
 <script>
 'use strict';
 /* ================= 상수 ================= */
-const VERSION = '0.3.0';
+const VERSION = '0.5.0';
 const L_MEAS = 1500;    // 측정 기준길이 (mm)
 const L_DISP = 1435;    // 표시 기준길이 (mm)
 const BLOCK  = 20;      // 수평계 스케일 블럭 높이 (mm)
@@ -348,13 +364,13 @@ function go(name){
   $('scr-' + name).classList.add('active');
   current = name;
   if(name === 'menu') renderMenu();
-  if(name === 'measure'){ renderStatus(); renderRecords(); }
+  if(name === 'measure'){ renderStatus(); renderRecords(); reelShown = null; measureNum(); }
   if(name === 'calib') calibStart();
   if(name === 'sens') renderSens();
   if(name === 'help') $('helpDevice').textContent = '현재 선택: ' + (S.device === 'ios' ? '아이폰' : '안드로이드폰');
   if(['measure','calib','diag'].includes(name)) requestWake(); else releaseWake();
   if(name !== 'measure') meas.phase = 'idle';
-  window.scrollTo(0,0);
+  window.scrollTo(0,0); $('app').scrollTop = 0;
 }
 
 /* ================= 기종 / 안내 ================= */
@@ -515,7 +531,7 @@ async function startSensor(){
   if(typeof DeviceMotionEvent === 'undefined'){ $('startMsg').textContent = '이 기기/브라우저는 동작 센서를 지원하지 않습니다.'; return; }
   window.addEventListener('devicemotion', onMotion);
   sensorOn = true;
-  try{ if(screen.orientation && screen.orientation.lock) screen.orientation.lock('portrait').catch(()=>{}); }catch(e){}
+  await tryNativeLock();
   go(S.calib ? 'menu' : 'calib');
 }
 
@@ -650,10 +666,11 @@ function renderMeasure(){
     else { label = stable ? '● 실시간 (안정)' : '○ 실시간 (흔들림)'; mb.textContent = '측정'; mb.disabled = !r; }
   }
   ml.textContent = label; ml.classList.toggle('fixed', fixed);
-  $('spread').textContent = spread != null ? `· 흔들림 ${pm(spread)}` : '';
-  if(val == null){ ro.innerHTML = '<span class="int">--</span><span class="dec">.-</span>'; ro.classList.remove('stable'); $('dirmsg').textContent = ''; return; }
+  $('spread').textContent = spread != null ? `흔들림 ${pm(spread)}` : '';
+  if(val == null){ ro.classList.add('nodata'); ro.classList.remove('stable'); $('dirmsg').textContent = ''; return; }
   const f = fmt(val);
-  ro.innerHTML = `<span class="int">${f.int}</span><span class="dec">${f.dec}</span>`;
+  ro.classList.remove('nodata');
+  if(reelShown === null || f.value !== reelShown) reelShow(f.value, reelShown === null);
   ro.classList.toggle('stable', stable);
   $('dirmsg').textContent = f.value > 0 ? '이쪽(스마트폰쪽) 레일이 높습니다.'
                           : f.value < 0 ? '이쪽(스마트폰쪽) 레일이 낮습니다.'
@@ -688,10 +705,10 @@ function renderRecords(){
 }
 function attachSwipe(li, item, idx){
   let x0 = null, y0 = null, dx = 0, horiz = null;
-  item.addEventListener('pointerdown', e => { x0 = e.clientX; y0 = e.clientY; dx = 0; horiz = null; item.style.transition = 'none'; });
+  item.addEventListener('pointerdown', e => { const q = localPt(e); x0 = q.x; y0 = q.y; dx = 0; horiz = null; item.style.transition = 'none'; });
   item.addEventListener('pointermove', e => {
     if(x0 == null) return;
-    const ddx = e.clientX - x0, ddy = e.clientY - y0;
+    const q = localPt(e), ddx = q.x - x0, ddy = q.y - y0;
     if(horiz == null && (Math.abs(ddx) > 8 || Math.abs(ddy) > 8)){
       horiz = Math.abs(ddx) > Math.abs(ddy);
       if(horiz){ li.classList.add('swiping'); try{ item.setPointerCapture(e.pointerId); }catch(_){} }
@@ -768,7 +785,7 @@ function drawChart(){
     ctx.stroke();
   };
   line('r', '#707a8a', 1);
-  line('f', '#2dbdb6', 3);
+  line('f', '#fcd535', 3);
 }
 
 /* ================= 캘리브레이션 ================= */
@@ -1057,6 +1074,135 @@ async function requestWake(){
 }
 function releaseWake(){ try{ if(wakeLock){ wakeLock.release(); wakeLock = null; } }catch(e){} }
 document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible' && ['measure','calib','diag'].includes(current)) requestWake(); });
+
+/* ================= 캔트값 숫자 릴 (슬롯머신 + 물리) =================
+   각 자리 숫자는 0~9 띠(릴). 스프링-질량-감쇠 모델로 목표 숫자까지 회전.
+   소수점 자리: 관성(m) 1, 튕김 3, 최대 가속도 300 기준.
+   정수 자리: 글씨가 1.33배 크므로 무게 ×1.78(=1.33²) → 느리게 출발·정지, 가속도 ÷1.78 */
+const REEL = {mass: 1.0, bounce: 3, acc: 300, heavy: 1.78, bigJump: 5};
+let reels = null, reelShown = null;
+function reelInit(){
+  reels = [0,1,2,3].map(i => {
+    const strip = document.createElement('div'); strip.className = 'strip';
+    for(let k = 0; k <= 10; k++){ const e = document.createElement('span'); e.textContent = k % 10; strip.appendChild(e); }
+    $('rl' + i).appendChild(strip);
+    return {el: strip, p: 0, v: 0, T: 0, dig: 0, heavy: i < 3};
+  });
+  requestAnimationFrame(reelTick);
+}
+function reelParams(heavy){
+  const wf = heavy ? REEL.heavy : 1;
+  const m = REEL.mass * wf, zeta = 1 - REEL.bounce * 0.075, w = Math.sqrt(220 / m);
+  return {k: w * w, c: 2 * zeta * w, A: REEL.acc / Math.sqrt(REEL.mass) / wf};
+}
+function reelDraw(r){ const x = ((r.p % 10) + 10) % 10; r.el.style.transform = `translateY(${-1.1 * x}em)`; }
+let reelLast = null;
+function reelTick(ts){
+  if(reelLast == null) reelLast = ts;
+  const dt = Math.min(0.05, (ts - reelLast) / 1000); reelLast = ts;
+  if(current === 'measure'){
+    const PH = reelParams(true), PL = reelParams(false);
+    const n = Math.max(1, Math.ceil(dt / 0.004)), h = dt / n;
+    for(const r of reels){
+      if(r.p === r.T && r.v === 0) continue;
+      const P = r.heavy ? PH : PL;
+      for(let i = 0; i < n; i++){
+        let a = P.k * (r.T - r.p) - P.c * r.v;
+        a = Math.max(-P.A, Math.min(P.A, a));
+        r.v += a * h; r.p += r.v * h;
+      }
+      if(Math.abs(r.T - r.p) < 0.002 && Math.abs(r.v) < 0.02){ r.p = r.T; r.v = 0; }
+      reelDraw(r);
+    }
+  }
+  requestAnimationFrame(reelTick);
+}
+function reelShow(v, snap){
+  const a = Math.abs(v), ip = Math.floor(a + 1e-9), dp = Math.round((a - ip) * 10) % 10;
+  const d = [Math.floor(ip / 100) % 10, Math.floor(ip / 10) % 10, ip % 10, dp];
+  const up = reelShown === null || a >= Math.abs(reelShown);
+  const big = !snap && Math.abs(v - reelShown) >= REEL.bigJump;
+  d.forEach((x, i) => {
+    const r = reels[i];
+    if(snap){ r.T = r.p = x; r.v = 0; r.dig = x; reelDraw(r); return; }
+    const resting = Math.abs(r.T - r.p) < 0.5 && Math.abs(r.v) < 1;
+    const base = resting ? r.T : r.p;                       // 움직이는 중이면 현재 위치 기준 → 회전이 누적되지 않음
+    const mod = n => ((n % 10) + 10) % 10;
+    let T = up ? base + mod(x - base) : base - mod(base - x);
+    if(big && resting) T += (up ? 1 : -1) * 10 * (1 + (i * 0.5 | 0));   // 큰 변화: 멈춰 있던 릴만 추가 회전 (오른쪽일수록 더 돌아 늦게 멈춤)
+    if(x === r.dig && !big) T = r.T;                        // 숫자가 그대로면 목표 유지
+    r.T = T; r.dig = x;
+  });
+  $('rl0').style.display = ip >= 100 ? 'inline-block' : 'none';
+  $('rl1').style.display = ip >= 10 ? 'inline-block' : 'none';
+  $('rSg').textContent = v > 0 ? '+' : v < 0 ? '−' : '';
+  reelShown = v;
+  measureNum();
+}
+/* 정수부 폭을 "−888" 기준으로 고정 → 값·자릿수가 바뀌어도 소수점과 mm 위치 고정 */
+function measureNum(){
+  const num = $('rNum'); if(!num || !$('scr-measure').classList.contains('active')) return;   // 숨겨진 화면에서는 폭이 0으로 측정됨
+  const probe = document.createElement('span');
+  probe.className = 'int';
+  probe.style.cssText = 'position:absolute; visibility:hidden; white-space:nowrap; left:0; top:0;';
+  probe.textContent = '−888';
+  $('readout').appendChild(probe);
+  const w = probe.offsetWidth;          // offsetWidth: 화면 역회전(transform)과 무관한 레이아웃 폭
+  probe.remove();
+  num.style.width = w + 'px';
+}
+reelInit();
+try{ document.fonts && document.fonts.ready.then(measureNum); }catch(e){}
+
+/* ================= 화면 회전 고정 =================
+   1) 안드로이드: 전체화면 + screen.orientation.lock('portrait') (실제 잠금)
+   2) 공통(아이폰 포함): 기기가 가로로 돌아가면 앱 화면을 반대로 회전시켜 기기 기준 세로 화면 유지 */
+let rotDeg = 0;   // 0, -90, 90 : 앱 화면에 적용한 회전
+async function tryNativeLock(){
+  const isAndroid = /Android/i.test(navigator.userAgent);
+  try{
+    if(isAndroid && document.fullscreenEnabled && !document.fullscreenElement)
+      await document.documentElement.requestFullscreen({navigationUI: 'hide'});
+  }catch(e){}
+  try{ if(screen.orientation && screen.orientation.lock) await screen.orientation.lock('portrait'); }catch(e){}
+  applyRotation();
+}
+function screenAngle(){
+  if(screen.orientation && typeof screen.orientation.angle === 'number') return screen.orientation.angle;
+  if(typeof window.orientation === 'number') return (window.orientation + 360) % 360;
+  return 0;
+}
+function applyRotation(){
+  const app = $('app'), W = window.innerWidth, H = window.innerHeight;
+  const a = screenAngle();
+  // 기기가 반시계 90°(angle 90) → 앱 -90° / 시계 90°(angle 270) → 앱 +90°
+  const want = (W > H && a === 90) ? -90 : (W > H && a === 270) ? 90 : 0;
+  rotDeg = want;
+  if(want === 0){
+    app.classList.remove('rot'); app.style.cssText = '';
+    document.documentElement.style.removeProperty('--appH');
+    document.documentElement.style.removeProperty('--appW');
+    document.body.style.overflow = '';
+  } else {
+    app.classList.add('rot');
+    app.style.width = H + 'px'; app.style.height = W + 'px';
+    app.style.transform = want === -90 ? `translateY(${H}px) rotate(-90deg)` : `translateX(${W}px) rotate(90deg)`;
+    document.documentElement.style.setProperty('--appH', W + 'px');
+    document.documentElement.style.setProperty('--appW', H + 'px');
+    document.body.style.overflow = 'hidden';
+  }
+  measureNum();
+}
+/* 회전된 화면에서 터치 좌표를 앱 기준 좌표로 변환 (스와이프 삭제용) */
+function localPt(e){
+  if(rotDeg === -90) return {x: -e.clientY, y: e.clientX};
+  if(rotDeg === 90)  return {x: e.clientY,  y: -e.clientX};
+  return {x: e.clientX, y: e.clientY};
+}
+window.addEventListener('resize', () => setTimeout(applyRotation, 50));
+window.addEventListener('orientationchange', () => setTimeout(applyRotation, 150));
+try{ screen.orientation && screen.orientation.addEventListener('change', () => setTimeout(applyRotation, 50)); }catch(e){}
+applyRotation();
 
 /* ================= 시작 ================= */
 if(!S.device) go('device');
