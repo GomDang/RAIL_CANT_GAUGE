@@ -34,7 +34,7 @@
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   html,body{margin:0; height:100%; background:var(--canvas); color:var(--body);
-    font-family:var(--font); font-size:18px; font-weight:400; overscroll-behavior:none; -webkit-user-select:none; user-select:none;}
+    font-family:var(--font); font-size:18px; font-weight:400; word-break:keep-all; overflow-wrap:break-word; overscroll-behavior:none; -webkit-user-select:none; user-select:none;}
   body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);}
   :focus-visible{outline:none; box-shadow:0 0 0 2px rgba(59,130,246,.5);}
   .screen{display:none; min-height:100vh; min-height:var(--appH,100dvh); flex-direction:column; padding:14px 16px 16px;}
@@ -82,7 +82,18 @@
   .banner{background:var(--elev); color:var(--white); font-weight:700; font-size:19px; line-height:1.4;
     border-radius:var(--r-lg); border-left:5px solid var(--primary-active); padding:10px 12px; margin:6px 0;}
   .banner.danger{border-left-color:var(--down);}
-  .modelabel{text-align:center; font-size:19px; font-weight:700; color:var(--muted2); margin-top:12px; min-height:26px;}
+  /* 측정 화면: 한 화면에 고정, 페이지 스크롤 없음 */
+  #scr-measure.active{height:100vh; height:var(--appH,100dvh); min-height:0; overflow:hidden; position:relative; padding-bottom:10px;}
+  #scr-measure > *{flex:none;}
+  /* 경고 팝업: 레이아웃 위에 겹쳐 표시 → 아래 요소가 움직이지 않음 */
+  .popups{position:absolute; left:12px; right:12px; bottom:40px; z-index:30; display:flex; flex-direction:column-reverse; gap:8px; pointer-events:none;}   /* 캔트값을 가리지 않도록 아래(저장 목록 위)에 표시 */
+  .popup{pointer-events:auto; background:#2b3139f2; color:var(--white); font-weight:700; font-size:19px; line-height:1.4;
+    border:2px solid var(--primary-active); border-radius:var(--r-xl); padding:12px 14px; display:flex; gap:10px; align-items:flex-start;
+    animation:popin .18s ease-out;}
+  .popup.danger{border-color:var(--down);}
+  .popup .x{margin-left:auto; color:var(--muted2); font-size:16px; font-weight:600; white-space:nowrap; padding-left:6px;}
+  @keyframes popin{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;}}
+  .modelabel{text-align:center; font-size:19px; font-weight:700; color:var(--muted2); margin-top:10px; height:26px; line-height:26px; white-space:nowrap; overflow:hidden;}
   .modelabel.fixed{color:var(--teal);}
   .readout{display:flex; justify-content:center; align-items:flex-end; margin:6px 0 2px; font-family:var(--num); font-variant-numeric:tabular-nums; font-feature-settings:"tnum";
     font-weight:700; letter-spacing:-0.3px; line-height:1; color:var(--white); transition:color .15s, opacity .2s; white-space:nowrap;}
@@ -101,20 +112,24 @@
   .readout.nodata{opacity:.25;}
   .unit{text-align:center; color:var(--muted2); font-size:20px; min-height:26px;}
   .unit .spread{font-family:var(--num); color:var(--body); font-weight:500;}
-  .dirmsg{text-align:center; font-size:24px; font-weight:700; color:var(--white); min-height:34px; margin:8px 0 10px; line-height:1.3;}
+  .dirmsg{text-align:center; font-size:24px; font-weight:700; color:var(--white); height:32px; line-height:32px; margin:4px 0 6px; white-space:nowrap; overflow:hidden;}
   .actions{display:flex; gap:10px;}
-  .actions .btn{flex:1; min-height:76px; font-size:26px; margin:6px 0;}
-  .records{list-style:none; margin:8px 0 0; padding:0; height:calc(60px * 5); overflow-y:auto;
-    background:var(--card); border-radius:var(--r-xl);}
-  .records li{position:relative; height:60px; overflow:hidden; border-bottom:1px solid var(--line); touch-action:pan-y;}
+  .actions .btn{flex:1; min-height:68px; font-size:26px; margin:4px 0;}
+  /* 저장 목록: 남은 높이를 모두 쓰고, 10줄이 보이도록 줄 높이 자동 계산 (--rowH) */
+  #scr-measure .records{flex:1 1 auto; min-height:0;}
+  .records{list-style:none; margin:8px 0 0; padding:0; overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
+    scrollbar-width:none; -ms-overflow-style:none; background:var(--card); border-radius:var(--r-xl);}
+  .records::-webkit-scrollbar{display:none; width:0; height:0;}
+  .records li{position:relative; height:var(--rowH,40px); overflow:hidden; border-bottom:1px solid var(--line); touch-action:pan-y;}
   .records li:last-child{border-bottom:none;}
   .records .del{opacity:0; position:absolute; inset:0; background:var(--down); color:var(--white); display:flex; align-items:center; justify-content:flex-end; padding-right:18px; font-size:20px; font-weight:700;}
   .records li.swiping .del{opacity:1;}
   .records .item{position:absolute; inset:0; background:var(--card); display:flex; align-items:center; justify-content:space-between; padding:0 18px;
-    font-family:var(--num); font-size:28px; font-weight:700; color:var(--white); font-variant-numeric:tabular-nums; transition:transform .2s;}
-  .records .item .tm{color:var(--muted2); font-size:23px; font-weight:500;}
+    font-family:var(--num); font-size:max(16px, calc(var(--rowH,40px) * 0.56)); font-weight:700; color:var(--white); font-variant-numeric:tabular-nums; transition:transform .2s;}
+  .records .item .tm{color:var(--muted2); font-size:max(16px, calc(var(--rowH,40px) * 0.47)); font-weight:500;}
   .records .empty{color:var(--muted2); font-size:18px; text-align:center; padding:18px; border:none; height:auto;}
-  .hint{font-size:16px; color:var(--muted2); text-align:right; margin-top:6px;}
+  .hint{font-size:16px; color:var(--muted2); text-align:right; margin-top:4px; height:22px; line-height:22px;}
+  .chromeNote{display:flex; gap:8px; align-items:center; background:var(--card); border-radius:var(--r-xl); padding:12px 14px; margin:10px 0; font-size:18px; font-weight:600; color:var(--white);}
   .nosensor{position:fixed; inset:0; background:rgba(11,14,17,.94); display:none; align-items:center; justify-content:center; text-align:center; padding:24px; z-index:50; font-size:24px; font-weight:700; color:var(--white);}
 
   /* 캘리브레이션 */
@@ -185,6 +200,7 @@
     <li>충전포트(<b>USB-C</b>)가 <b>수평계 끝 쪽</b>을 향하게 하세요.</li>
     <li>스마트폰이 놓인 쪽 레일이 높으면 <b>+</b>, 낮으면 <b>−</b> 로 표시됩니다.</li>
   </ol>
+  <div class="chromeNote"><span aria-hidden="true">🌐</span><span>이 앱은 크롬(Chrome)에 최적화 되었습니다.</span></div>
   <label class="check" id="guideCheckWrap"><input type="checkbox" id="guideCheck"> 다음부터 보지 않기</label>
   <div class="spacer"></div>
   <button class="btn primary" id="guideNext" onclick="guideDone()">확인</button>
@@ -211,14 +227,14 @@
   <button class="btn" onclick="go('diag')"><span class="ic">📈</span><span>진단<small>센서 잡음·진동 확인</small></span></button>
   <button class="btn" onclick="go('help')"><span class="ic">❓</span><span>도움말<small>거치 방법, 부호 규칙, 측정 방법</small></span></button>
   <div class="spacer"></div>
-  <p class="sub" style="text-align:center">Rail Cant Gauge v0.5.0</p>
+  <p class="sub" style="text-align:center">Rail Cant Gauge v0.6.0</p>
 </section>
 
 <!-- 캔트측정 -->
 <section class="screen" id="scr-measure">
   <header><button class="back" onclick="go('menu')">◀ 메뉴</button><h1>캔트측정</h1></header>
   <div class="status"><span id="stCalib"></span><span id="stSens"></span></div>
-  <div id="measBanners"></div>
+  <div class="popups" id="measBanners"></div>
   <div class="modelabel" id="modelabel"></div>
   <div class="readout nodata" id="readout"><span class="num int" id="rNum"><span class="sg" id="rSg"></span><span class="rl" id="rl0"></span><span class="rl" id="rl1"></span><span class="rl" id="rl2"></span></span><span class="dec dot">.</span><span class="dec rl" id="rl3"></span><span class="ru">mm</span></div>
   <div class="unit"><span id="spread" class="spread"></span></div>
@@ -294,6 +310,10 @@
     </ol>
   </div>
   <div class="card">
+    <b>사용 브라우저</b>
+    <p>이 앱은 크롬(Chrome)에 최적화 되었습니다. 아이폰과 안드로이드폰 모두 크롬으로 열어 사용하세요.</p>
+  </div>
+  <div class="card">
     <b>화면 회전</b>
     <p>폰을 돌려도 앱 화면은 세로로 유지됩니다. 아이폰은 제어 센터에서 <b>세로 방향 잠금</b>을 켜두면 화면이 아예 돌아가지 않아 더 편리합니다.</p>
   </div>
@@ -302,14 +322,14 @@
     <p id="helpDevice"></p>
     <button class="btn" onclick="changeDevice()">기종 다시 선택</button>
   </div>
-  <p class="sub" style="text-align:center">Rail Cant Gauge v0.5.0</p>
+  <p class="sub" style="text-align:center">Rail Cant Gauge v0.6.0</p>
 </section>
 </div><!-- /#app -->
 
 <script>
 'use strict';
 /* ================= 상수 ================= */
-const VERSION = '0.5.0';
+const VERSION = '0.6.0';
 const L_MEAS = 1500;    // 측정 기준길이 (mm)
 const L_DISP = 1435;    // 표시 기준길이 (mm)
 const BLOCK  = 20;      // 수평계 스케일 블럭 높이 (mm)
@@ -364,7 +384,7 @@ function go(name){
   $('scr-' + name).classList.add('active');
   current = name;
   if(name === 'menu') renderMenu();
-  if(name === 'measure'){ renderStatus(); renderRecords(); reelShown = null; measureNum(); }
+  if(name === 'measure'){ renderStatus(); renderRecords(); reelShown = null; measureNum(); layoutRecords(); }
   if(name === 'calib') calibStart();
   if(name === 'sens') renderSens();
   if(name === 'help') $('helpDevice').textContent = '현재 선택: ' + (S.device === 'ios' ? '아이폰' : '안드로이드폰');
@@ -644,12 +664,17 @@ function measureTick(){
   }
 }
 let lastBannerKey = '';
+const popHidden = {};   // 사용자가 닫은 팝업: 10초간 숨김
 function renderMeasure(){
   const r = result, P = PRESETS[S.sens];
   const w = warnings(r);
-  const key = w.map(x => x[0]).join('|');
+  const tNow = now();
+  const vis = w.filter(([t]) => !(popHidden[t] > tNow));
+  const key = vis.map(x => x[0]).join('|');
   if(key !== lastBannerKey){
-    $('measBanners').innerHTML = w.map(([t, cls]) => `<div class="banner ${cls}">⚠ ${t}</div>`).join('');
+    $('measBanners').innerHTML = vis.map(([t, cls]) =>
+      `<div class="popup ${cls}" data-t="${t}"><span>⚠ ${t}</span><span class="x">닫기 ✕</span></div>`).join('');
+    $('measBanners').querySelectorAll('.popup').forEach(el => el.onclick = () => { popHidden[el.dataset.t] = now() + 10; });
     lastBannerKey = key;
   }
   const ro = $('readout'), ml = $('modelabel'), mb = $('measBtn');
@@ -691,6 +716,12 @@ function saveRecord(){
   renderRecords();
   $('records').scrollTop = 0;
   if(navigator.vibrate) navigator.vibrate(30);
+}
+/* 저장 목록이 남은 높이에 10줄 보이도록 줄 높이 계산 (최소 24px) */
+function layoutRecords(){
+  const ul = $('records'); if(!ul || !$('scr-measure').classList.contains('active')) return;
+  const h = ul.clientHeight;
+  if(h > 0) ul.style.setProperty('--rowH', Math.max(24, Math.floor(h / 10)) + 'px');
 }
 function renderRecords(){
   const ul = $('records');
@@ -1077,9 +1108,9 @@ document.addEventListener('visibilitychange', () => { if(document.visibilityStat
 
 /* ================= 캔트값 숫자 릴 (슬롯머신 + 물리) =================
    각 자리 숫자는 0~9 띠(릴). 스프링-질량-감쇠 모델로 목표 숫자까지 회전.
-   소수점 자리: 관성(m) 1, 튕김 3, 최대 가속도 300 기준.
-   정수 자리: 글씨가 1.33배 크므로 무게 ×1.78(=1.33²) → 느리게 출발·정지, 가속도 ÷1.78 */
-const REEL = {mass: 1.0, bounce: 3, acc: 300, heavy: 1.78, bigJump: 5};
+   소수점 자리: 관성(m) 3, 튕김 2, 최대 가속도 600 기준.
+   정수 자리: 무게 ×4 → 느리게 출발·정지, 가속도 ÷4 */
+const REEL = {mass: 3.0, bounce: 2, acc: 600, heavy: 4.0, bigJump: 5};
 let reels = null, reelShown = null;
 function reelInit(){
   reels = [0,1,2,3].map(i => {
@@ -1191,7 +1222,7 @@ function applyRotation(){
     document.documentElement.style.setProperty('--appW', H + 'px');
     document.body.style.overflow = 'hidden';
   }
-  measureNum();
+  measureNum(); layoutRecords();
 }
 /* 회전된 화면에서 터치 좌표를 앱 기준 좌표로 변환 (스와이프 삭제용) */
 function localPt(e){
