@@ -110,6 +110,7 @@
   .readout .strip span{display:block; height:1.1em; line-height:1.1em;}
   .readout.stable{color:var(--stable);}
   .readout.nodata{opacity:.25;}
+  .readout.ghostSave{position:absolute; margin:0; z-index:25; pointer-events:none; color:var(--stable); transition:none;}   /* 저장 애니메이션용 복사본 */
   .unit{text-align:center; color:var(--muted2); font-size:20px; min-height:26px;}
   .unit .spread{font-family:var(--num); color:var(--body); font-weight:500;}
   .dirmsg{text-align:center; font-size:24px; font-weight:700; color:var(--white); height:32px; line-height:32px; margin:4px 0 6px; white-space:nowrap; overflow:hidden;}
@@ -227,7 +228,7 @@
   <button class="btn" onclick="go('diag')"><span class="ic">📈</span><span>진단<small>센서 잡음·진동 확인</small></span></button>
   <button class="btn" onclick="go('help')"><span class="ic">❓</span><span>도움말<small>거치 방법, 부호 규칙, 측정 방법</small></span></button>
   <div class="spacer"></div>
-  <p class="sub" style="text-align:center">Rail Cant Gauge v0.6.0</p>
+  <p class="sub" style="text-align:center">Rail Cant Gauge v0.7.0</p>
 </section>
 
 <!-- 캔트측정 -->
@@ -322,14 +323,14 @@
     <p id="helpDevice"></p>
     <button class="btn" onclick="changeDevice()">기종 다시 선택</button>
   </div>
-  <p class="sub" style="text-align:center">Rail Cant Gauge v0.6.0</p>
+  <p class="sub" style="text-align:center">Rail Cant Gauge v0.7.0</p>
 </section>
 </div><!-- /#app -->
 
 <script>
 'use strict';
 /* ================= 상수 ================= */
-const VERSION = '0.6.0';
+const VERSION = '0.7.0';
 const L_MEAS = 1500;    // 측정 기준길이 (mm)
 const L_DISP = 1435;    // 표시 기준길이 (mm)
 const BLOCK  = 20;      // 수평계 스케일 블럭 높이 (mm)
@@ -709,13 +710,41 @@ function saveRecord(){
   else if(meas.phase === 'idle' && result) v = liveDisplay(result);
   else return;
   if(v == null) return;
+  // 데이터는 즉시 저장 (애니메이션 중 앱이 꺼져도 값은 남음)
   S.records.unshift({time: hms(), cant: fmt(v).value});
   if(S.records.length > MAX_REC) S.records.length = MAX_REC;   // 오래된 것부터 삭제
   store.set('rcg.records', S.records);
-  if(meas.phase === 'done') meas.phase = 'idle';
-  renderRecords();
-  $('records').scrollTop = 0;
   if(navigator.vibrate) navigator.vibrate(30);
+  $('saveBtn').animate([{transform:'scale(1)'},{transform:'scale(.94)'},{transform:'scale(1)'}], {duration:180});
+  saveFly(() => {                 // 숫자가 목록 첫 줄에 도착하면 목록 갱신
+    renderRecords(true);
+    $('records').scrollTop = 0;
+  });
+  if(meas.phase === 'done') meas.phase = 'idle';
+}
+/* 저장 애니메이션 (시안 B: 목록으로 날아감)
+   현재 캔트값의 복사본이 살짝 떠올랐다가(0~20%) 작아지며 목록 첫 줄로 빨려 들어감. 0.56초.
+   위치는 offset 값(레이아웃 기준)으로 계산 → 화면 역회전 상태에서도 정확함 */
+const SAVE_FLY = {duration: 560, lift: 10, liftScale: 1.08, endScale: 0.3, endOpacity: 0.6, highlight: 900};
+function saveFly(done){
+  const scr = $('scr-measure'), ro = $('readout'), ul = $('records');
+  if(!ro.animate){ done(); return; }
+  const g = ro.cloneNode(true);
+  g.removeAttribute('id'); g.querySelectorAll('[id]').forEach(e => e.removeAttribute('id'));
+  g.classList.remove('nodata'); g.classList.add('ghostSave');
+  g.style.left = ro.offsetLeft + 'px'; g.style.top = ro.offsetTop + 'px'; g.style.width = ro.offsetWidth + 'px';
+  scr.appendChild(g);
+  const rowH = parseFloat(getComputedStyle(ul).getPropertyValue('--rowH')) || 40;
+  const fromX = ro.offsetLeft + ro.offsetWidth / 2, fromY = ro.offsetTop + ro.offsetHeight / 2;
+  const toX = ul.offsetLeft + ul.offsetWidth - 60, toY = ul.offsetTop + rowH / 2;
+  const dx = toX - fromX, dy = toY - fromY, F = SAVE_FLY;
+  g.animate([
+    {transform: 'translate(0,0) scale(1)', opacity: 1},
+    {transform: `translate(0,${-F.lift}px) scale(${F.liftScale})`, opacity: 1, offset: .2},
+    {transform: `translate(${dx}px,${dy}px) scale(${F.endScale})`, opacity: F.endOpacity}
+  ], {duration: F.duration, easing: 'cubic-bezier(.5,0,.75,0)'}).finished
+    .then(() => { g.remove(); done(); })
+    .catch(() => { g.remove(); done(); });
 }
 /* 저장 목록이 남은 높이에 10줄 보이도록 줄 높이 계산 (최소 24px) */
 function layoutRecords(){
@@ -723,7 +752,7 @@ function layoutRecords(){
   const h = ul.clientHeight;
   if(h > 0) ul.style.setProperty('--rowH', Math.max(24, Math.floor(h / 10)) + 'px');
 }
-function renderRecords(){
+function renderRecords(fresh){
   const ul = $('records');
   ul.innerHTML = '';
   if(!S.records.length){ ul.innerHTML = '<li class="empty">저장된 값이 없습니다.</li>'; return; }
@@ -733,6 +762,12 @@ function renderRecords(){
     attachSwipe(li, li.querySelector('.item'), idx);
     ul.appendChild(li);
   });
+  // 새로 저장된 첫 줄: 펼쳐지며 들어오고 노란빛으로 잠깐 강조
+  if(fresh && ul.firstChild && ul.firstChild.animate){
+    const li = ul.firstChild, item = li.querySelector('.item');
+    li.animate([{height:'0px', opacity:0}, {height:li.offsetHeight + 'px', opacity:1}], {duration:260, easing:'cubic-bezier(.2,.8,.3,1)'});
+    item.animate([{background:'#5a4d12'}, {background:'#1e2329'}], {duration:SAVE_FLY.highlight, easing:'ease-out'});
+  }
 }
 function attachSwipe(li, item, idx){
   let x0 = null, y0 = null, dx = 0, horiz = null;
